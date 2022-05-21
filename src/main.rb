@@ -20,7 +20,26 @@ OptionParser.new do |opts|
   end
 end.parse!
 
-# regex for network name
-network_regexp = Regexp.new('[\d]{3,4}[_\D]*')
+# output of netsh
+networks = %x(netsh wlan show networks).lines.filter do |line|
+  # check if line is a network ssid
+  line.start_with?(/SSID [\d]+/)
+end.collect do |line|
+  # remove start from string
+  line.strip.gsub(/SSID [\d]+ : /, "")
+end
 
-puts (@options[:team].to_s + "_" + @options[:name]).match?(network_regexp) 
+# netsh exit code
+error = %x(echo %errorlevel%).strip.to_i
+
+# exit if netsh fails
+if error != 0
+  puts "Netsh failed with a non-zero exit code."
+  exit(1)
+end
+
+# team and name are set by options if present otherwise default regex
+team = (@options[:team].nil?) ? '^[\d]{3,4}' : "^(#{@options[:team].to_s[0..3]})"
+name = (@options[:name].nil?) ? '[\w]*$' : "_(#{@options[:name]})$"
+
+frc_regexp = Regexp.new(team + name)
