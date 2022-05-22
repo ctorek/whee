@@ -30,10 +30,10 @@ end.collect do |line|
 end
 
 # netsh exit code
-error = %x(echo %errorlevel%).strip.to_i
+error = %x(echo $?).strip.downcase == "false"
 
 # exit if netsh fails
-if error != 0
+if error
   puts "Netsh failed with a non-zero exit code."
   exit(1)
 end
@@ -54,6 +54,9 @@ if networks.empty?
   exit(2)
 end
 
+# index of desired network
+index = 0
+
 # prompt user if more than one option is present after regex
 if networks.length > 1
   puts "Multiple networks found:\n"
@@ -72,4 +75,15 @@ if networks.length > 1
     puts "Index out of bounds."
     exit(1)
   end
+end
+
+# connect to the desired network
+%x(netsh wlan connect ssid=#{networks[index]} name=#{networks[index]})
+error = %x(echo %errorlevel%).strip.downcase == "false"
+
+if !error
+  puts "Successfully connected to robot network."
+else
+  puts "Failed to connect to robot network."
+  exit(1)
 end
