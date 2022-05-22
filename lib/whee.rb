@@ -98,10 +98,13 @@ class Main
       puts "Failed to connect to robot network."
       exit(1)
     end
+
+    # set jdk home for gradle wrapper
+    ENV['JAVA_HOME'] = "C:\\Users\\Public\\wpilib\\#{Time.now.year.to_s}\\jdk"
     
     # run gradle deploy
     begin
-      %x(gradlew.bat)
+      deploy = %x(gradlew.bat deploy)
       error = %x(echo %ERRORLEVEL%).strip.downcase.to_i != 0 
     rescue Errno::ENOENT
       # rescue and exit if gradle wrapper isn't found
@@ -109,7 +112,8 @@ class Main
       exit(1)
     end
    
-    puts error
+    puts deploy
+    puts %x(echo %ERRORLEVEL%)
   end
 end
 
