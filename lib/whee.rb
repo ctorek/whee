@@ -2,7 +2,11 @@ require 'optparse'
 
 class Main
   # global options
-  @@options = {}
+  @@options = {
+    :team => nil,
+    :name => nil,
+    :year => nil
+  }
 
   def parse_options
     OptionParser.new do |opts|
@@ -37,7 +41,7 @@ class Main
     end
 
     # netsh exit code
-    error = %x(echo $?).strip.downcase == "false"
+    error = %x(echo %ERRORLEVEL%).strip.downcase == "false"
 
     # exit if netsh fails
     if error
@@ -46,8 +50,8 @@ class Main
     end
 
     # team and name are set by options if present otherwise default regex
-    team = (@@options[:team].nil?) ? '^[\d]{3,4}' : "^(#{@options[:team].to_s[0..3]})"
-    name = (@@options[:name].nil?) ? '[\w]*$' : "_(#{@options[:name]})$"
+    team = (@@options[:team].nil?) ? '^[\d]{3,4}' : "^(#{@@options[:team].to_s[0..3]})"
+    name = (@@options[:name].nil?) ? '[\w]*$' : "_(#{@@options[:name]})$"
     frc_regexp = Regexp.new(team + name)
 
     # check which networks match the frc radio name regex
@@ -86,7 +90,7 @@ class Main
 
     # connect to the desired network
     %x(netsh wlan connect ssid=#{networks[index]} name=#{networks[index]})
-    error = %x(echo %errorlevel%).strip.downcase == "false"
+    error = %x(echo %ERRORLEVEL%).strip.downcase == "false"
 
     if !error
       puts "Successfully connected to robot network."
@@ -94,6 +98,18 @@ class Main
       puts "Failed to connect to robot network."
       exit(1)
     end
+    
+    # run gradle deploy
+    begin
+      %x(gradlew.bat)
+      error = %x(echo %ERRORLEVEL%).strip.downcase.to_i != 0 
+    rescue Errno::ENOENT
+      # rescue and exit if gradle wrapper isn't found
+      puts "Gradle wrapper not found. Make sure this is a WPILib project directory."
+      exit(1)
+    end
+   
+    puts error
   end
 end
 

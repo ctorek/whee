@@ -5,6 +5,8 @@ Gem::Specification.new do |s|
   s.summary = "a faster deploy tool for FRC"
   s.authors = ["Ell Torek"]
   s.email = "ctorek@proton.me"
-  s.files = "lib/whee.rb"
+  s.files = Dir["{lib}/**/*.rb", "bin/*", "LICENSE", "*.md"]
+  s.require_path = 'lib'
+  s.executables << 'whee'
   s.homepage = "https://github.com/ctorek/whee"
 end
