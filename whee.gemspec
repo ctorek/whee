@@ -9,4 +9,5 @@ Gem::Specification.new do |s|
   s.require_path = 'lib'
   s.executables << 'whee'
   s.homepage = "https://github.com/ctorek/whee"
+  s.required_ruby_version = '>= 2.7.0'
 end
