@@ -5,26 +5,24 @@ class Main
   @@options = {
     :team => nil,
     :name => nil,
-    :year => nil
+    :year => nil,
+    :connect => false
   }
 
   def parse_options
     OptionParser.new do |opts|
       # team number
-      opts.on("-t", "--team=TEAM", Integer, "Team number to connect to") do |team|
-        @@options[:team] = team
-      end
+      opts.on("-t", "--team=TEAM", Integer, "Team number to connect to")
     
       # network name
-      opts.on("-n", "--name=NAME", String, "Network name excluding team number") do |name|
-        @@options[:name] = name.strip
-      end
+      opts.on("-n", "--name=NAME", String, "Network name excluding team number")
     
       # year for wpilib jdk
-      opts.on("-y", "--year=YEAR", Integer, "WPILib version to use JDK from") do |year|
-        @@options[:year] = year
-      end
-    end.parse!
+      opts.on("-y", "--year=YEAR", Integer, "WPILib version to use JDK from")
+
+      # only connect to robot
+      opts.on("-c", "--connect", "Only connect and not deploy")
+    end.parse!(into: @@options)
   end
 
   def run
@@ -51,7 +49,7 @@ class Main
 
     # team and name are set by options if present otherwise default regex
     team = (@@options[:team].nil?) ? '^[\d]{3,4}' : "^(#{@@options[:team].to_s[0..3]})"
-    name = (@@options[:name].nil?) ? '[\w]*$' : "_(#{@@options[:name]})$"
+    name = (@@options[:name].nil?) ? '[\w]*$' : "_(#{@@options[:name].strip})$"
     frc_regexp = Regexp.new(team + name)
 
     # check which networks match the frc radio name regex
@@ -94,13 +92,28 @@ class Main
 
     if !error
       puts "Successfully connected to robot network."
+
+      # exit if connect-only mode is set
+      if @@options[:connect]
+        exit(0)
+      end
     else
       puts "Failed to connect to robot network."
       exit(1)
     end
 
-    # set jdk home for gradle wrapper
-    ENV['JAVA_HOME'] = "C:\\Users\\Public\\wpilib\\#{Time.now.year.to_s}\\jdk"
+    # year for jdk location
+    year = (@@options[:year].nil?) ? Time.now.year.to_s : @@options[:year]
+    dir = "C:\\Users\\Public\\wpilib\\#{year}\\jdk"
+
+    # check if jdk exists
+    if !Dir.exists?(dir)
+      puts "Invalid year provided. JDK not found."
+      exit(1)
+    end
+
+    # set gradle wrapper java home
+    ENV['JAVA_HOME'] = dir
     
     # run gradle deploy
     begin
@@ -113,7 +126,6 @@ class Main
     end
    
     puts deploy
-    puts %x(echo %ERRORLEVEL%)
   end
 end
 
