@@ -53,7 +53,7 @@ class Main
   def run
     # ensure wpilib project
     if !wpilib_proj?
-      puts "File '.\\.wpilib\\wpilib_preferences.json' not found."
+      STDERR.puts "File '.\\.wpilib\\wpilib_preferences.json' not found."
       exit(1)
     else
       # set options from wpilib proj
@@ -75,12 +75,9 @@ class Main
       line.strip.gsub(/SSID [\d]+ : /, "")
     end
 
-    # netsh exit code
-    error = %x(echo %ERRORLEVEL%).strip.downcase == "false"
-
     # exit if netsh fails
-    if error
-      puts "Netsh failed with a non-zero exit code."
+    if $? != 0
+      STDERR.puts "Netsh failed with a non-zero exit code."
       exit(1)
     end
 
@@ -96,7 +93,7 @@ class Main
 
     # exit if no robot network to connect to
     if networks.empty?
-      puts "No robot network found to connect to."
+      STDERR.puts "No robot network found to connect to."
       exit(1)
     end
 
@@ -118,16 +115,15 @@ class Main
 
       # exit if incorrect index
       if index < 0 || index > networks.length - 1
-        puts "Index out of bounds."
+        STDERR.puts "Index out of bounds."
         exit(1)
       end
     end
 
     # connect to the desired network
     %x(netsh wlan connect ssid=#{networks[index]} name=#{networks[index]})
-    error = %x(echo %ERRORLEVEL%).strip.downcase == "false"
 
-    if !error
+    if $? == 0
       puts "Successfully connected to robot network."
 
       # exit if connect-only mode is set
@@ -135,7 +131,7 @@ class Main
         exit(0)
       end
     else
-      puts "Failed to connect to robot network."
+      STDERR.puts "Failed to connect to robot network."
       exit(1)
     end
 
@@ -145,7 +141,7 @@ class Main
 
     # check if jdk exists
     if !Dir.exists?(dir)
-      puts "Invalid year provided. JDK not found."
+      STDERR.puts "Invalid year provided. JDK not found."
       exit(1)
     end
 
@@ -155,10 +151,9 @@ class Main
     # run gradle deploy
     begin
       deploy = %x(gradlew.bat deploy)
-      error = %x(echo %ERRORLEVEL%).strip.downcase.to_i != 0 
     rescue Errno::ENOENT
       # rescue and exit if gradle wrapper isn't found
-      puts "Gradle wrapper not found. Make sure this is a WPILib project directory."
+      STDERR.puts "Gradle wrapper not found. Make sure this is a WPILib project directory."
       exit(1)
     end
    
