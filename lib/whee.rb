@@ -25,7 +25,34 @@ class Main
     end.parse!(into: @@options)
   end
 
+  # checks whether current directory is a wpilib project
+  def wpilib_proj? 
+    File.exist?(".\\.wpilib\\wpilib_preferences.json")
+  end
+
+  # sets default options based on ./.wpilib/wpilib_preferences.json
+  def wpilib_pref
+    require 'json'
+    
+    # no error checking because this method is only called after `wpilib_proj?`
+    preferences = JSON.parse(File.read(".\\.wpilib\\wpilib_preferences.json"))
+
+    @@options[:year] = preferences["projectYear"]
+    @@options[:team] = preferences["teamNumber"]
+
+    puts "Discovered year #{@@options[:year]}"
+    puts "Discovered team #{@@options[:team]}"
+  end
+
   def run
+    # ensure wpilib project
+    if !wpilib_proj?
+      puts "File '.\\.wpilib\\wpilib_preferences.json' not found."
+      exit(1)
+    else
+      wpilib_pref 
+    end
+
     # run command line options parser
     parse_options
 
@@ -60,7 +87,7 @@ class Main
     # exit if no robot network to connect to
     if networks.empty?
       puts "No robot network found to connect to."
-      exit(2)
+      exit(1)
     end
 
     # index of desired network
@@ -103,7 +130,7 @@ class Main
     end
 
     # year for jdk location
-    year = (@@options[:year].nil?) ? Time.now.year.to_s : @@options[:year]
+    year = @@options[:year] || Time.now.year.to_s
     dir = "C:\\Users\\Public\\wpilib\\#{year}\\jdk"
 
     # check if jdk exists
