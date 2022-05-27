@@ -39,9 +39,15 @@ class Main
 
     @@options[:year] = preferences["projectYear"]
     @@options[:team] = preferences["teamNumber"]
+  end
 
-    puts "Discovered year #{@@options[:year]}"
-    puts "Discovered team #{@@options[:team]}"
+  # refresh list of networks available
+  def netsh_refresh
+    # disconnect from current to force refresh
+    %x(netsh wlan disconnect)
+    
+    # sleep until refresh
+    sleep 3
   end
 
   def run
@@ -50,11 +56,15 @@ class Main
       puts "File '.\\.wpilib\\wpilib_preferences.json' not found."
       exit(1)
     else
+      # set options from wpilib proj
       wpilib_pref 
     end
 
     # run command line options parser
     parse_options
+
+    # refresh list of networks
+    netsh_refresh
 
     # output of netsh
     networks = %x(netsh wlan show networks).lines.filter do |line|

@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = "whee"
-  s.version = "0.1.1"
+  s.version = "0.1.2"
   s.license = "GPL-3.0-or-later"
   s.summary = "a faster deploy tool for FRC"
   s.description = <<-EOF
