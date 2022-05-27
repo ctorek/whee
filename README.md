@@ -4,7 +4,12 @@ whee is a command-line program to accelerate the GradleRIO deploy process used i
 
 > whee is still largely untested and is not approved or endorsed by FIRST in any way.
 
-### known issues
+### usage
 
-- [ ] silently fails with networks that have not been connected to before, due to a profile matching the SSID not being present
-- [ ] only works for windows cmd due to current reliance on netsh
+```
+Usage: whee [options]
+    -t, --team=TEAM                  Team number to connect to
+    -n, --name=NAME                  Network name excluding team number
+    -y, --year=YEAR                  WPILib version to use JDK from
+    -c, --connect                    Only connect and not deploy
+```

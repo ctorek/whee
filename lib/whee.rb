@@ -63,6 +63,18 @@ class Main
     # run command line options parser
     parse_options
 
+    # store current network before disconnect from refresh
+    prev_ssids = %x(netsh wlan show interface).lines.collect do |line|
+      # remove extra whitespace from each line
+      line.gsub(/[\s]+/, " ").strip
+    end.filter do |line|
+      # find current ssid
+      line.start_with?(/SSID/)
+    end
+    
+    # remove start from string
+    prev_ssid = prev_ssids[0].gsub(/(SSID : )/, "")
+
     # refresh list of networks
     netsh_refresh
 
@@ -94,6 +106,10 @@ class Main
     # exit if no robot network to connect to
     if networks.empty?
       STDERR.puts "No robot network found to connect to."
+
+      # reconnect to previous network
+      %x(netsh wlan connect ssid=#{prev_ssid} name=#{prev_ssid})
+  
       exit(1)
     end
 
