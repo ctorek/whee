@@ -17,4 +17,5 @@ Gem::Specification.new do |s|
   s.executables << 'whee'
   s.homepage = "https://github.com/ctorek/whee"
   s.required_ruby_version = '>= 2.7.0'
+  s.add_runtime_dependency "colorize", "~> 0.8", ">= 0.8.1"
 end

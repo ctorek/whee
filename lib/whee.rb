@@ -1,3 +1,4 @@
+require 'colorize'
 require 'optparse'
 
 class Main
@@ -6,7 +7,8 @@ class Main
     :team => nil,
     :name => nil,
     :year => nil,
-    :connect => false
+    :connect => false,
+    :build => false
   }
 
   def parse_options
@@ -22,6 +24,9 @@ class Main
 
       # only connect to robot
       opts.on("-c", "--connect", "Only connect and not deploy")
+
+      # build instead of deploy
+      opts.on("-b", "--build", "Only build and not deploy")
     end.parse!(into: @@options)
   end
 
@@ -53,7 +58,7 @@ class Main
   def run
     # ensure wpilib project
     if !wpilib_proj?
-      STDERR.puts "File '.\\.wpilib\\wpilib_preferences.json' not found."
+      STDERR.puts "File '.\\.wpilib\\wpilib_preferences.json' not found.".colorize(:light_red)
       exit(1)
     else
       # set options from wpilib proj
@@ -88,8 +93,8 @@ class Main
     end
 
     # exit if netsh fails
-    if $? != 0
-      STDERR.puts "Netsh failed with a non-zero exit code."
+    if $?.exitstatus != 0
+      STDERR.puts "Netsh failed with a non-zero exit code.".colorize(:light_red)
       exit(1)
     end
 
@@ -105,7 +110,7 @@ class Main
 
     # exit if no robot network to connect to
     if networks.empty?
-      STDERR.puts "No robot network found to connect to."
+      STDERR.puts "No robot network found to connect to.".colorize(:light_red)
 
       # reconnect to previous network
       %x(netsh wlan connect ssid=#{prev_ssid} name=#{prev_ssid})
@@ -118,7 +123,7 @@ class Main
 
     # prompt user if more than one option is present after regex
     if networks.length > 1
-      puts "Multiple networks found:\n"
+      puts "Multiple networks found:\n".colorize(:light_blue)
       
       # print out each index and option
       networks.each_index do |index|
@@ -131,7 +136,7 @@ class Main
 
       # exit if incorrect index
       if index < 0 || index > networks.length - 1
-        STDERR.puts "Index out of bounds."
+        STDERR.puts "Index out of bounds.".colorize(:light_red)
         exit(1)
       end
     end
@@ -139,15 +144,15 @@ class Main
     # connect to the desired network
     %x(netsh wlan connect ssid=#{networks[index]} name=#{networks[index]})
 
-    if $? == 0
-      puts "Successfully connected to robot network."
+    if $?.exitstatus == 0
+      puts "Successfully connected to robot network.".colorize(:light_green)
 
       # exit if connect-only mode is set
       if @@options[:connect]
         exit(0)
       end
     else
-      STDERR.puts "Failed to connect to robot network."
+      STDERR.puts "Failed to connect to robot network.".colorize(:light_red)
       exit(1)
     end
 
@@ -157,7 +162,7 @@ class Main
 
     # check if jdk exists
     if !Dir.exists?(dir)
-      STDERR.puts "Invalid year provided. JDK not found."
+      STDERR.puts "Invalid year provided. JDK not found.".colorize(:light_red)
       exit(1)
     end
 
@@ -166,14 +171,24 @@ class Main
     
     # run gradle deploy
     begin
-      deploy = %x(gradlew.bat deploy)
+      deploy = %x(gradlew.bat #{@@options[:build] ? "build" : "deploy"})
     rescue Errno::ENOENT
       # rescue and exit if gradle wrapper isn't found
-      STDERR.puts "Gradle wrapper not found. Make sure this is a WPILib project directory."
+      STDERR.puts "Gradle wrapper not found. Make sure this is a WPILib project directory.".colorize(:light_red)
       exit(1)
     end
+
+    # deploy or build
+    mode = @@options[:build] ? "Build" : "Deploy"
    
-    puts deploy
+    # check if deploy failed
+    if $?.exitstatus != 0
+      STDERR.puts "#{mode} failed. Error below:".colorize(:light_red)
+      puts deploy
+      exit(1)
+    end
+
+    # successful deploy
+    puts "#{mode} successful.".colorize(:light_green)
   end
 end
-
