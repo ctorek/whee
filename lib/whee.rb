@@ -78,7 +78,7 @@ class Main
     end
     
     # remove start from string
-    prev_ssid = prev_ssids[0].gsub(/(SSID : )/, "")
+    prev_ssid = (prev_ssids[0] || "").gsub(/(SSID : )/, "")
 
     # refresh list of networks
     netsh_refresh
@@ -93,7 +93,7 @@ class Main
     end
 
     # exit if netsh fails
-    if $?.exitstatus != 0
+    if $?.success?
       STDERR.puts "Netsh failed with a non-zero exit code.".colorize(:light_red)
       exit(1)
     end
@@ -113,8 +113,10 @@ class Main
       STDERR.puts "No robot network found to connect to.".colorize(:light_red)
 
       # reconnect to previous network
-      %x(netsh wlan connect ssid=#{prev_ssid} name=#{prev_ssid})
-  
+      if !prev_ssids.empty?
+        # only reconnect if previously connected
+        %x(netsh wlan connect ssid=#{prev_ssid} name=#{prev_ssid})
+      end
       exit(1)
     end
 
@@ -144,7 +146,7 @@ class Main
     # connect to the desired network
     %x(netsh wlan connect ssid=#{networks[index]} name=#{networks[index]})
 
-    if $?.exitstatus == 0
+    if $?.success?
       puts "Successfully connected to robot network.".colorize(:light_green)
 
       # exit if connect-only mode is set
@@ -182,7 +184,7 @@ class Main
     mode = @@options[:build] ? "Build" : "Deploy"
    
     # check if deploy failed
-    if $?.exitstatus != 0
+    if $?.success?
       STDERR.puts "#{mode} failed. Error below:".colorize(:light_red)
       puts deploy
       exit(1)
